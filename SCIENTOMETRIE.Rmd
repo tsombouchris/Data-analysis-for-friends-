@@ -1,0 +1,1269 @@
+---
+title: "MEMOIRE_CARINE"
+author: "Tsombou"
+date: "27 mai 2019"
+output: word_document
+ 
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(tidy=T, include =T, echo=T, warning=F, message=F, dev ='png', dev.args=list(pointsize=9), 
+ fig.width=6, fig.height=6, fig.path='Figs/')
+
+```
+
+#```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+#```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+```{r}
+# Chargement du package readxl
+library(readxl)
+
+DonneesPersCita<-read_excel("C:/Users/user/Documents/R/Donnees memoire/Donnees_PersCita_220519.xls")
+DonneesMethod<-read_excel("C:/Users/user/Documents/R/Donnees memoire/Donnees_Metho_220519.xls")
+DonneesConcept<-read_excel("C:/Users/user/Documents/R/Donnees memoire/Donnees_Con_220519.xls")
+
+```
+
+```{r}
+
+summary(DonneesPersCita$LangueA)
+table(DonneesPersCita$LangueA)
+```
+
+```{r}
+
+```
+
+
+
+```{r}
+
+# install.packages("gridExtra")
+
+# Création de nouvelles variables
+DonneesPersCita$GenreAuteur<-factor(DonneesPersCita$GenreAuteur)
+levels(DonneesPersCita$GenreAuteur)
+levels(DonneesPersCita$GenreAuteur)[1]<-"Masculin"
+levels(DonneesPersCita$GenreAuteur)[2]<-"Féminin"
+
+
+library(tidyverse)
+library(dslabs)
+library(gridExtra)
+library(dplyr)
+library(ggpubr)
+#theme_set(theme_pubr())
+#theme_set(new())
+
+old <- theme_set(theme_bw())
+
+library(dplyr)
+df <- DonneesPersCita %>%
+  group_by(AnneSoutenance, GenreAuteur) %>%
+  summarise(counts = n())
+
+df[nrow(df) + 1,] = list(2005,"Féminin", 0)
+df[nrow(df) + 1,] = list(2006,"Féminin", 0)
+df[nrow(df) + 1,] = list(2007,"Féminin", 0)
+df[nrow(df) + 1,] = list(2007,"Masculin", 0)
+df[nrow(df) + 1,] = list(2008,"Féminin", 0)
+df[nrow(df) + 1,] = list(2009,"Féminin", 0)
+df[nrow(df) + 1,] = list(2009,"Masculin", 0)
+df[nrow(df) + 1,] = list(2011,"Féminin", 0)
+df[nrow(df) + 1,] = list(2012,"Féminin", 0)
+df[nrow(df) + 1,] = list(2013,"Féminin", 0)
+df[nrow(df) + 1,] = list(2019,"Masculin", 0)
+
+df
+
+
+df1 <- DonneesPersCita %>%
+  group_by(GenreAuteur) %>%
+  summarise(Effectif = n())
+
+
+
+df3 <- df1 %>%
+  arrange(desc(GenreAuteur)) %>%
+  mutate(prop = round(Effectif*100/sum(Effectif), 1))
+
+# Représentations graphiques
+
+#1. Répartition par sexe des Auteurs
+
+ggplot(data = DonneesPersCita) + 
+  geom_bar(mapping = aes(x = GenreAuteur,fill = GenreAuteur)) + 
+  labs(x = "Genre de l'Auteur", y = "Effectif", title = "Répartition des Auteurs suivant le Genre")
+
+
+# Répartition des Auteurs selon le sexe version 1
+
+ggplot(df3, aes(GenreAuteur, prop)) +
+  geom_linerange(
+    aes(x = GenreAuteur, ymin = 0, ymax = prop), 
+    color = "lightgray", size = 1.5
+  )+
+  geom_point(aes(color = GenreAuteur), size = 3)+
+  ggpubr::color_palette("jco")+
+  theme_pubclean() + scale_y_continuous(limits = c(0, 60))+
+  geom_text(aes(label = prop), vjust = -0.9) + labs( x = "Genre de l'Auteur", y = "Pourcentage(%)")
+  
+# Répartition des Auteurs selon le sexe version 2
+
+ggplot(df3, aes(GenreAuteur, prop)) +
+  geom_linerange(
+    aes(x = GenreAuteur, ymin = 0, ymax = prop), 
+    color = c("#0066CC","#FF3399"), size = 15
+  )+
+  geom_point(aes(color = GenreAuteur), size = 6)+
+  scale_y_continuous(limits = c(0, 60))+
+  geom_text(aes(label = prop), vjust = -0.9) + labs( x = "Genre de l'Auteur", y = "Pourcentage(%)")
+
+
+# Répartition des Auteurs selon le sexe version 3
+ggplot(df3, aes(GenreAuteur, prop)) +
+  geom_linerange(
+    aes(x = GenreAuteur, ymin = 0, ymax = prop,color = GenreAuteur), 
+     size = 15
+  )+
+  geom_point(aes(color = GenreAuteur), size = 2)+
+  scale_y_continuous(limits = c(0, 60))+
+  geom_text(aes(label = prop), vjust = -0.9) + labs( x = "Genre de l'Auteur", y = "Pourcentage(%)")
+
+
+# 2. Evolution diachronique du genre des étudiants
+
+ggplot(df, aes(x = AnneSoutenance, y=counts, col=GenreAuteur))  + geom_line(size=2) +   geom_vline(aes(xintercept=2010), colour="black", size=1,linetype = "dashed")+
+  labs(x = "Année de Soutenance", y = "Effectif", title = "Evolution du nombre d'auteurs suivant le Genre")+
+  geom_point(size = 3)+
+  geom_text(aes(x=2010, label="de 2010 à 2019", y=10), colour="green", angle=0, vjust = -1, hjust=-0.1, text=element_text(size=6))+
+  geom_text(aes(x=2010, label="avant 2010", y=10), colour="red", angle=0, vjust = -1,hjust=1.2, text=element_text(size=6))+
+  geom_text(aes(x=2018, label="Provisoire", y=10), colour="#FF0000", angle=90, vjust = 2,hjust=2.9, text=element_text(size=6))+
+  scale_y_continuous(limits = c(0, 11))
+
+
+
+# 3. Evolution diachronique de la combinaison linguistique des étudiants
+
+# Création de nouvelles variables factor pour CL
+
+    # LangueA
+DonneesPersCita$LangueA<-factor(DonneesPersCita$LangueA)
+levels(DonneesPersCita$LangueA)[levels(DonneesPersCita$LangueA)=="Français"] <- "Fra"
+levels(DonneesPersCita$LangueA)[levels(DonneesPersCita$LangueA)=="Anglais"] <- "Ang"
+levels(DonneesPersCita$LangueA)[levels(DonneesPersCita$LangueA)=="Arabe"] <- "Ara"
+    
+    # LangueB
+DonneesPersCita$LangueB<-factor(DonneesPersCita$LangueB)
+levels(DonneesPersCita$LangueB)[levels(DonneesPersCita$LangueB)=="Français"] <- "Fra"
+levels(DonneesPersCita$LangueB)[levels(DonneesPersCita$LangueB)=="Anglais"] <- "Ang"
+
+    # Languec
+        # Création d'une variable LangueC_ avec les valeurs "Autre" de LangueC
+for(i in 1:nrow(DonneesPersCita)){
+
+          if ( !(DonneesPersCita$LangueC[i] %in% c("Autre",NA)) )
+                {
+                DonneesPersCita$LangueC_[i] <- DonneesPersCita$LangueC[i]
+                } else if (is.na(DonneesPersCita$LangueC[i]))
+                      {
+                      DonneesPersCita$LangueC_[i] <- "."
+                      } else
+                           {
+                            DonneesPersCita$LangueC_[i] <- DonneesPersCita$AutreLangueC[i]
+                           }
+}
+
+        # Factorisation de LangueC_
+DonneesPersCita$LangueC_<-factor(DonneesPersCita$LangueC_)
+levels(DonneesPersCita$LangueC_)[levels(DonneesPersCita$LangueC_)=="Espagnol"] <- "Esp"
+levels(DonneesPersCita$LangueC_)[levels(DonneesPersCita$LangueC_)=="Français"] <- "Fra"
+levels(DonneesPersCita$LangueC_)[levels(DonneesPersCita$LangueC_)=="KISWAHILI"] <- "Kis"
+
+# Création de la variable Combinaison Linguistique CL proprement dite
+
+for(i in 1:nrow(DonneesPersCita)){
+  
+  if ( DonneesPersCita$LangueC_[i] %in% c(".") )
+  {
+    DonneesPersCita$CL[i] <- paste0(DonneesPersCita$LangueA[i],"/",DonneesPersCita$LangueB[i])
+  } else 
+  {
+    DonneesPersCita$CL[i] <- paste0(DonneesPersCita$LangueA[i],"/",DonneesPersCita$LangueB[i],"/",DonneesPersCita$LangueC_[i])
+  } 
+}
+
+    #répartion des lengue en %
+tabLangueA<-table(DonneesPersCita$LangueA)
+round(prop.table(tabLangueA)*100, 2)
+
+
+tabLangueB<-table(DonneesPersCita$LangueB)
+round(prop.table(tabLangueB)*100, 2)
+
+LangC<-DonneesPersCita$LangueC_[DonneesPersCita$LangueC_ != "."]
+
+tabLangueC<-table(LangC)
+round(prop.table(tabLangueC)*100, 2)
+
+
+tabCL<-table(DonneesPersCita$CL)
+round (prop.table(tabCL)*100,2)
+
+
+# 4. Evolution diachronique annuelle de la production générale
+
+df4 <- df  %>% 
+  group_by(AnneSoutenance) %>%
+  summarise( counts = sum(counts))
+
+
+ggplot(df4, aes(x = AnneSoutenance, y=counts))  + geom_line(size=2) +   geom_vline(aes(xintercept=2010), colour="black", size=1,linetype = "dashed")+
+  labs(x = "Année de Soutenance", y = "Nombre de mémoires soutenus")+
+  geom_point(size = 3)+
+  geom_text(aes(x=2010, label="de 2010 à 2019", y=10), colour="green", angle=0, vjust = -1, hjust=-0.1, text=element_text(size=6))+
+  geom_text(aes(x=2010, label="avant 2010", y=10), colour="red", angle=0, vjust = -1,hjust=1.2, text=element_text(size=6))+
+  geom_text(aes(x=2018, label="Provisoire", y=10), colour="#FF0000", angle=90, vjust = 2.5,hjust=0.6, text=element_text(size=6))
+
+
+df5<- DonneesPersCita %>%
+  group_by(AnneSoutenance, GenreAuteur) %>%
+  summarise(counts = n())
+
+# 5. Productivité diachronique des superviseurs.
+
+m<-addmargins(table(DonneesPersCita$NomSuperviseur1,DonneesPersCita$AnneSoutenance))
+
+library("knitr")
+kable(m, caption = "ttt")
+
+n<-addmargins(table(DonneesPersCita$NomSuperviseur2,DonneesPersCita$AnneSoutenance))
+
+library("knitr")
+kable(n, caption = "uuu")
+
+
+ProdSup1<-as.data.frame(addmargins(table(DonneesPersCita$NomSuperviseur1,DonneesPersCita$AnneSoutenance)))
+
+ProdSup1
+```
+
+
+```{r}
+# 7. Evolution diachronique de la productivité institutionnelle
+
+DonneesPersCita$InstitutionSoutenanceMemoire<-factor(DonneesPersCita$InstitutionSoutenanceMemoire)
+levels(DonneesPersCita$InstitutionSoutenanceMemoire)
+
+levels(DonneesPersCita$InstitutionSoutenanceMemoire)[levels(DonneesPersCita$InstitutionSoutenanceMemoire)=="1"]<-"ASTI"
+levels(DonneesPersCita$InstitutionSoutenanceMemoire)[levels(DonneesPersCita$InstitutionSoutenanceMemoire)=="2"]<-"PAUTRAIN"
+levels(DonneesPersCita$InstitutionSoutenanceMemoire)[levels(DonneesPersCita$InstitutionSoutenanceMemoire)=="3"]<-"ISTIC"
+
+tab2<-table(DonneesPersCita$InstitutionSoutenanceMemoire, DonneesPersCita$AnneSoutenance)
+kable(tab2, caption = "Evolution diachronique de la productivité institutionnelle")
+
+
+```
+
+```{r}
+# 8. Évolution diachronique de la collaboration institutionnelle.
+
+DonneesPersCita$InstitutionSuperviseur1<-factor(DonneesPersCita$InstitutionSuperviseur1)
+DonneesPersCita$InstitutionSuperviseur2<-factor(DonneesPersCita$InstitutionSuperviseur2)
+
+levels(DonneesPersCita$InstitutionSuperviseur1)
+levels(DonneesPersCita$InstitutionSuperviseur2)
+
+
+
+for(i in 1:nrow(DonneesPersCita)){
+         DonneesPersCita$CollabInstitu[i]<-paste0(DonneesPersCita$InstitutionSuperviseur1[i],"/",DonneesPersCita$InstitutionSuperviseur2[i])
+}
+
+DonneesPersCita$CollabInstitu<-factor(DonneesPersCita$CollabInstitu)
+levels(DonneesPersCita$CollabInstitu)[levels(DonneesPersCita$CollabInstitu)=="UNIVERSITE DE BUEA/ASTI"]<-"ASTI/UNIVERSITE DE BUEA"
+levels(DonneesPersCita$CollabInstitu)[levels(DonneesPersCita$CollabInstitu)=="UCAC/ASTI"]<-"ASTI/UCAC"
+
+tabColIns<-table(DonneesPersCita$CollabInstitu,DonneesPersCita$AnneSoutenance)
+kable(tabColIns, caption = "Évolution diachronique de la collaboration institutionnelle.")
+```
+
+```{r}
+# 9. Evolution diachronique du nombre de citations.
+library(ggplot2)
+theme_set(theme_minimal())
+
+
+df6<-DonneesPersCita %>%
+  group_by(AnneSoutenance) %>%
+  summarise( NbCitations = sum(NbCitations)
+  ) 
+df6[nrow(df6) + 1,] = list(2007,0)
+df6[nrow(df6) + 1,] = list(2009,0)
+
+df6<-df6 %>% 
+  arrange(AnneSoutenance)
+
+
+# Version 1
+ggplot(data = df6, aes(x =AnneSoutenance , y = NbCitations))+
+  geom_line(color = "#00AFBB", size = 2)+ stat_smooth(
+    color = "#FC4E07",  method = "loess"
+  )+scale_y_continuous(limits = c(0, 1460))
+
+# Version 2
+ggplot(df6, aes (x =AnneSoutenance , y = NbCitations)) +
+  geom_linerange(
+    aes(x = AnneSoutenance, ymin = 0, ymax = NbCitations), 
+    color = "lightgrey", size = 2
+  )+
+  geom_point(aes(color = AnneSoutenance), size = 3)+
+  scale_y_continuous(limits = c(0, 1450))+
+  geom_line( color = "lightgrey",size = 1)+
+  geom_text(aes(label = NbCitations), vjust = -0.9, size=2) + labs( x = "Année de Soutenance", y = "Nombre de Citations")
+
+#Version 3
+PCi<-ggplot(df6, aes (x =AnneSoutenance , y = NbCitations)) +
+  scale_y_continuous(limits = c(0, 1450))+
+  geom_line( color = "lightgrey",size = 1.2)+
+  geom_text(aes(label = NbCitations), vjust = -0.9, size=2.5) + labs( x = "Année de Soutenance", y = "Nombre de Citations")+
+geom_text(aes(x=2018, label="Provisoire", y=1300), colour="#FF0000", angle=90, vjust = 2,hjust=2.9, text=element_text(size=6))
+  
+
+```
+
+```{r}
+
+# 10 Evolution diachronique de la langue des citations
+
+# remplacer les valeurs manquantes des nombres de citations par zéro pour réussir les calculs
+DonneesPersCita<-DonneesPersCita %>% replace_na(list(NbCtationsPor = 0, NbCitationsAll = 0,
+                  NbCitationsAng=0,NbCitationsAr=0,NbCitationsFr=0,NbCitationsEsp=0,
+                  NbCtationsAutresLang=0))
+
+# Citations en Français
+df7<-DonneesPersCita %>%
+  group_by(AnneSoutenance) %>%
+  summarise( NbCitationsFr = sum(NbCitationsFr)
+  ) 
+df7[nrow(df7) + 1,] = list(2007,0)
+df7[nrow(df7) + 1,] = list(2009,0)
+
+
+df7<-df7 %>% 
+  arrange(AnneSoutenance)
+
+
+
+PCiFr<-ggplot(df7, aes (x =AnneSoutenance , y = NbCitationsFr)) +
+  scale_y_continuous(limits = c(0, 460))+
+  geom_line( color = "lightgrey",size = 1.2)+
+  geom_text(aes(label = NbCitationsFr), vjust = -0.9, size=2.5) + labs( x = "Année de Soutenance", y = "Nombre de Citations en Français")+
+  geom_text(aes(x=2018, label="Provisoire", y=420), colour="#FF0000", angle=90, vjust =1.5,hjust=2.9, text=element_text(size=1))
+
+# Citations en Anglais
+
+df8<-DonneesPersCita %>%
+  group_by(AnneSoutenance) %>%
+  summarise( NbCitationsAng = sum(NbCitationsAng)
+  ) 
+df8[nrow(df8) + 1,] = list(2007,0)
+df8[nrow(df8) + 1,] = list(2009,0)
+
+
+df8<-df8 %>% 
+  arrange(AnneSoutenance)
+
+PCiAng<-ggplot(df8, aes (x =AnneSoutenance , y = NbCitationsAng)) +
+  scale_y_continuous(limits = c(0, 980))+
+  geom_line( color = "lightgrey",size = 1.2)+
+  geom_text(aes(label = NbCitationsAng), vjust = -0.9, size=2.5) + labs( x = "Année de Soutenance", y = "Nombre de Citations en Anglais")+
+  geom_text(aes(x=2018, label="Provisoire", y=900), colour="#FF0000", angle=90, vjust =1.5,hjust=2, text=element_text(size=1))
+
+
+# Citations en Arabe
+
+df9<-DonneesPersCita %>%
+  group_by(AnneSoutenance) %>%
+  summarise( NbCitationsAr = sum(NbCitationsAr)
+  ) 
+df9[nrow(df9) + 1,] = list(2007,0)
+df9[nrow(df9) + 1,] = list(2009,0)
+
+
+df9<-df9 %>% 
+  arrange(AnneSoutenance)
+
+PCiAr<-ggplot(df9, aes (x =AnneSoutenance , y = NbCitationsAr)) +
+  scale_y_continuous(limits = c(0, 4))+
+  geom_line( color = "lightgrey",size = 1.2)+
+  geom_text(aes(label = NbCitationsAr), vjust = -0.9, size=2.5) + labs( x = "Année de Soutenance", y = "Nombre de Citations en Arabe")+
+  geom_text(aes(x=2018, label="Provisoire", y=1.5), colour="#FF0000", angle=90, vjust =1.5,hjust=2, text=element_text(size=1))
+
+
+# Citations en Allemand
+
+df10<-DonneesPersCita %>%
+  group_by(AnneSoutenance) %>%
+  summarise( NbCitationsAll = sum(NbCitationsAll)
+  ) 
+
+df10[nrow(df10) + 1,] = list(2007,0)
+df10[nrow(df10) + 1,] = list(2009,0)
+
+
+df10<-df10 %>% 
+  arrange(AnneSoutenance)
+
+PCiAll<-ggplot(df10, aes (x =AnneSoutenance , y = NbCitationsAll)) +
+  scale_y_continuous(limits = c(0, 3))+
+  geom_line( color = "lightgrey",size = 1.2)+
+  geom_text(aes(label = NbCitationsAll), vjust = -0.9, size=2.5) + labs( x = "Année de Soutenance", y = "Nombre de Citations en Allemand")+
+  geom_text(aes(x=2018, label="Provisoire", y=2.5), colour="#FF0000", angle=90, vjust =1.5,hjust=2, text=element_text(size=1))
+
+
+
+# Citations en Espagnol
+
+df11<-DonneesPersCita %>%
+  group_by(AnneSoutenance) %>%
+  summarise( NbCitationsEsp = sum(NbCitationsEsp)
+  ) 
+# Pas de Citations en Espagnol
+
+
+
+
+
+# Citations en Portugais
+
+df12<-DonneesPersCita %>%
+  group_by(AnneSoutenance) %>%
+  summarise( NbCtationsPor = sum(NbCtationsPor)
+  ) 
+# Pas de citations en Portugais
+
+# Citations en une Autre Langue
+
+df13<-DonneesPersCita %>%
+  group_by(AnneSoutenance) %>%
+  summarise( NbCtationsAutresLang = sum(NbCtationsAutresLang)
+  ) 
+df13[nrow(df13) + 1,] = list(2007,0)
+df13[nrow(df13) + 1,] = list(2009,0)
+
+
+df13<-df13 %>% 
+  arrange(AnneSoutenance)
+
+PCiAutLang<-ggplot(df13, aes (x =AnneSoutenance , y = NbCtationsAutresLang)) +
+  scale_y_continuous(limits = c(0, 11))+
+  geom_line( color = "lightgrey",size = 1.2)+
+  geom_text(aes(label = NbCtationsAutresLang), vjust = -0.9, size=2.5) + labs( x = "Année de Soutenance", y = "Nombre de Citations dans une autres Langue")+
+  geom_text(aes(x=2018, label="Provisoire", y=1.5), colour="#FF0000", angle=90, vjust =1.5,hjust=0.75, text=element_text(size=1))
+
+
+
+df7<-df7 %>% mutate(langue="Fr")
+df7 <- df7 %>% rename(NbCitations=NbCitationsFr) 
+df8<-df8 %>% mutate(langue="Ang")
+df8 <- df8 %>% rename(NbCitations=NbCitationsAng) 
+df9<-df9 %>% mutate(langue="Ar")
+df9 <- df9 %>% rename(NbCitations=NbCitationsAr) 
+df10<-df10 %>% mutate(langue="All")
+df10 <- df10 %>% rename(NbCitations=NbCitationsAll) 
+df13<-df13 %>% mutate(langue="Autre")
+df13 <- df13 %>% rename(NbCitations=NbCtationsAutresLang)
+df14<-df7
+df14<-add_row(df14, AnneSoutenance = df8$AnneSoutenance, NbCitations = df8$NbCitations, langue=df8$langue)
+df14<-add_row(df14, AnneSoutenance = df9$AnneSoutenance, NbCitations = df9$NbCitations, langue=df9$langue)
+df14<-add_row(df14, AnneSoutenance = df10$AnneSoutenance, NbCitations = df10$NbCitations, langue=df10$langue)
+df14<-add_row(df14, AnneSoutenance = df13$AnneSoutenance, NbCitations = df13$NbCitations, langue=df13$langue)
+
+
+ggplot(df14, aes(x = AnneSoutenance, y=NbCitations, col=langue))  + geom_line(size=1) +
+  labs(x = "Année de Soutenance", y = "Nombre de Citations")+
+  geom_point(size = 1.2)+
+  geom_text(aes(x=2018, label="Provisoire", y=900), colour="#FF0000", angle=90, vjust = 1.5,hjust=3.3, text=element_text(size=6))+
+  geom_text(aes(label = NbCitations), vjust = -1.2, size=2.5)
+
+```
+
+```{r}
+# 11. Évolution diachronique du nombre de revues citées suivant la langue des revues
+  
+  # remplacer les valeurs manquantes des nombre d'occurences des revues citées par zéro pour réussir les calculs
+  DonneesPersCita<-DonneesPersCita %>% replace_na(list(OccRevueFr1 = 0, OccRevueFr2 = 0,
+                                                       OccRevueFr3=0,OccRevueFr4=0,OccRevueFr5=0,OccRevueAng1=0,
+                                                       OccRevueAng2=0, OccRevueAng3=0, OccRevueAng4=0, OccRevueAng5=0, OccRevueAutreLang1=0,OccRevueAutreLang2=0
+                                                       ,OccRevueAutreLang3=0, OccRevueAutreLang4=0, OccRevueAutreLang5=0,RevueAng1=".",RevueAng2=".",
+                                                       RevueAng3=".",RevueAng4=".", RevueAng5=".", RevueFr1=".",RevueFr2=".",RevueFr3=".",
+                                                       RevueFr4=".",RevueFr5=".",RevueAutreLang=".",RevueAutreLang1=".",RevueAutreLang2=".",
+                                                       RevueAutreLang4=".",RevueAutreLang5="."))
+
+# Revues en Français
+df_R<-DonneesPersCita %>%
+  group_by(AnneSoutenance) %>%
+  summarise( OccRevueFr1 = sum(OccRevueFr1), OccRevueFr2=sum(OccRevueFr2), OccRevueFr3=sum(OccRevueFr3),
+             OccRevueFr4=sum(OccRevueFr4), OccRevueFr5=sum(OccRevueFr5), OccRevueAng1=sum(OccRevueAng1),
+             OccRevueAng2=sum(OccRevueAng2), OccRevueAng3=sum(OccRevueAng3), OccRevueAng4=sum(OccRevueAng4),
+             OccRevueAng5=sum(OccRevueAng5), OccRevueAutreLang1=sum(OccRevueAutreLang1),
+             OccRevueAutreLang2=sum(OccRevueAutreLang2), OccRevueAutreLang3=sum(OccRevueAutreLang3),
+             OccRevueAutreLang4=sum(OccRevueAutreLang4),OccRevueAutreLang5=sum(OccRevueAutreLang5)
+  ) 
+
+df_R[nrow(df_R) + 1,] = c(2007, rep(0,15))
+df_R[nrow(df_R) + 1,] = c(2009, rep(0,15))
+
+
+df_R<-df_R %>% 
+  arrange(AnneSoutenance)
+
+df_R1<- with(df_R, cbind(AnneSoutenance,OccRevueFr=
+          OccRevueFr1+OccRevueFr2+OccRevueFr3+ OccRevueFr4+ OccRevueFr5,
+          OccRevueAng= OccRevueAng1+OccRevueAng2+ OccRevueAng3+ OccRevueAng4+ OccRevueAng5,
+          OccRevueAutLang=OccRevueAutreLang1+OccRevueAutreLang2+OccRevueAutreLang3+OccRevueAutreLang4+OccRevueAutreLang5) 
+)
+df_R1<-as.data.frame(df_R1)
+
+df_R2<-data.frame(AnneSoutenance=df_R1$AnneSoutenance ,OccRevue=df_R1$OccRevueFr, langue="Fr")
+df_R2<-add_row(df_R2, AnneSoutenance = df_R1$AnneSoutenance, OccRevue = df_R1$OccRevueAng, langue="Ang")
+df_R2<-add_row(df_R2, AnneSoutenance = df_R1$AnneSoutenance, OccRevue = df_R1$OccRevueAutLang, langue="Autres")
+
+
+ggplot(df_R2, aes(x = AnneSoutenance, y=OccRevue, col=langue))  + geom_line(size=1) +
+  labs(x = "Année de Soutenance", y = "Nombre de revues citées")+
+  geom_point(size = 2, shape=19)+
+  geom_text(aes(x=2018, label="Provisoire", y=50), colour="#FF0000", angle=90, vjust = 1.5,hjust=3.3, text=element_text(size=6))+
+  geom_text(aes(label = OccRevue), vjust = -1.2, size=2.5)
+
+
+```
+
+```{r}
+# 12. Situation des revues les plus citées
+
+Revues<-DonneesPersCita %>% select(AnneSoutenance, OccRevueFr1 , OccRevueFr2 , OccRevueFr3,OccRevueFr4,
+                                   OccRevueFr5,OccRevueAng1, OccRevueAng2, OccRevueAng3,
+                                   OccRevueAng4, OccRevueAng5,OccRevueAutreLang1,
+                                   OccRevueAutreLang2 ,OccRevueAutreLang3, 
+                                   OccRevueAutreLang4, OccRevueAutreLang5,RevueAng1,
+                                   RevueAng2,RevueAng3, RevueAng4, RevueAng5, RevueFr1,
+                                   RevueFr2,RevueFr3, RevueFr4, RevueFr5, RevueAutreLang, 
+                                   RevueAutreLang1, RevueAutreLang2,RevueAutreLang4, 
+                                   RevueAutreLang5)
+# renommage
+Revues <- Revues %>% rename(RevueAutreLang3 = RevueAutreLang)
+# reordering colums
+Revues <-Revues[c("AnneSoutenance", "OccRevueAng1", "OccRevueAng2", "OccRevueAng3",
+         "OccRevueAng4", "OccRevueAng5","OccRevueFr1" , "OccRevueFr2" , "OccRevueFr3","OccRevueFr4",
+         "OccRevueFr5","OccRevueAutreLang1",
+         "OccRevueAutreLang2" ,"OccRevueAutreLang3", 
+         "OccRevueAutreLang4", "OccRevueAutreLang5","RevueAng1",
+         "RevueAng2","RevueAng3", "RevueAng4", "RevueAng5", "RevueFr1",
+         "RevueFr2","RevueFr3", "RevueFr4", "RevueFr5", "RevueAutreLang1", 
+         "RevueAutreLang2", "RevueAutreLang3","RevueAutreLang4", 
+         "RevueAutreLang5")]
+
+
+
+# %>% filter(RevueAng1  != "."  &  
+#                                   RevueAng2  != "." & RevueAng3 != "." & RevueAng4  != "." & 
+#                                   RevueAng5  != "." &  RevueFr1  != "." & RevueFr2  != "." &
+#                                   RevueFr3  != "." &  RevueFr4  != "." &  RevueFr5  != "." &
+#                                   RevueAutreLang  != "." &  RevueAutreLang1  != "." &  
+#                                   RevueAutreLang2  != "." & RevueAutreLang4  != "." & RevueAutreLang5 != "." )
+
+
+L<-vector("list", 15)
+N<-rep(1:5,3)
+
+for(i in 1:length(L)){
+                      if( i <= 5){ names(L)[i]<-paste0("ReAng",N[i])
+                                  } else if(i <= 10) {
+                                                    names(L)[i]<-paste0("ReFr",N[i])
+                                                     } else { 
+                                                           names(L)[i]<-paste0("ReAut",N[i])
+                                                            }
+}
+
+noms<-names(Revues)
+
+for(i in 1:length(L)){
+          L[[i]]<-Revues %>%
+                group_by(AnneSoutenance, revue=get(noms[16+i])) %>%
+                 summarise(nbMem=n(), NbCit=sum(get(noms[1+i])))%>%
+                 filter(revue != ".")
+  
+                      }
+
+
+
+
+RevuesAng<- L[1:5] %>% 
+  # Bind the 5 first elements of L into a single data frame
+  bind_rows(.id = "id")
+
+RevuesFr<- L[6:10] %>% 
+  # Bind the 6th to 10th first elements of L into a single data frame
+  bind_rows(.id = "id")
+
+RevuesAut<- L[11:15] %>% 
+  # Bind the last 5 elements of L into a single data frame
+  bind_rows(.id = "id")
+
+# Nb de citations par revues par années
+
+RevuesAngSumary<-RevuesAng %>%
+  group_by(revue, AnneSoutenance)%>%
+  summarise(NbCit=sum(NbCit), nbMem=sum(nbMem))
+
+kable(RevuesAngSumary)
+
+RevuesFrSumary<-RevuesFr %>%
+  group_by(revue, AnneSoutenance)%>%
+  summarise(NbCit=sum(NbCit), nbMem=sum(nbMem))
+
+kable(RevuesFrSumary)
+
+RevuesAutSumary<-RevuesAut %>%
+  group_by(revue, AnneSoutenance)%>%
+  summarise(NbCit=sum(NbCit), nbMem=sum(nbMem))
+
+kable(RevuesAutSumary)
+
+# Nb de citations par revues sur la période
+
+RevuesAngSumary1<-RevuesAng %>%
+  group_by(revue)%>%
+  summarise(NbCit=sum(NbCit), nbMem=sum(nbMem))
+
+kable(RevuesAngSumary1)
+
+RevuesFrSumary1<-RevuesFr %>%
+  group_by(revue)%>%
+  summarise(NbCit=sum(NbCit), nbMem=sum(nbMem))
+
+kable(RevuesFrSumary1)
+
+RevuesAutSumary1<-RevuesAut %>%
+  group_by(revue)%>%
+  summarise(NbCit=sum(NbCit), nbMem=sum(nbMem))
+
+kable(RevuesAutSumary1)
+
+
+
+```
+
+```{r}
+
+# 13. Evolution diachronique de l'âge moyen des citations
+
+AgeCita<-DonneesPersCita %>% select(AnneSoutenance,AnneePub1:AnneePub40)
+#AgeCita1<- mutate_all(AgeCita, funs("Age"= AgeCita$AnneSoutenance - .))
+AgeCita2<- mutate_all(AgeCita, list("Age"= ~(AgeCita$AnneSoutenance - .)))
+#AgeCita<-as.data.frame(AgeCita)
+agec=list()
+
+for (i in 1:nrow(AgeCita2)){ 
+                        agec[[i]]<-(AgeCita2[i,c(1,43:82)])%>%select_if(~!is.na(.))
+                        l<-names(agec[[i]])
+                        agec[[i]]<-agec[[i]]%>%rowwise()%>%
+                        mutate(AgeMoy= mean(get(l[2]):get(l[ncol(agec[[i]])]))) 
+                        
+                      }
+     # AgeMoyCita<-c() 
+     # for(i in 1:length(agec)){v<-c(v,agec[[i]][1,ncol(agec[[i]])])}
+      
+      AgeMoyCita<-c()  
+      for(i in 1:length(agec)){AgeMoyCita<-c(AgeMoyCita,c(agec[[i]]$AnneSoutenance,agec[[i]]$AgeMoy))}
+      
+      kable(AgeMoyCita)
+      
+      
+      AgeMoy<-rep(0,55)
+      AnneeSoutenance<-rep(0,55)
+      AgeMoyCita1<-data.frame(AnneeSoutenance,AgeMoy)  
+      for(i in 1:length(agec)){AgeMoyCita1$AnneeSoutenance[i]<-agec[[i]]$AnneSoutenance
+                              AgeMoyCita1$AgeMoy[i]<-agec[[i]]$AgeMoy}
+      
+      kable(AgeMoyCita1)
+      
+      AgeCitaAnne<- AgeMoyCita1 %>%
+        group_by(AnneeSoutenance)%>%
+        summarise(AgeMoy=mean(AgeMoy))    
+
+      AgeCitaAnne[nrow(AgeCitaAnne) + 1,] = list(2007,0)
+      AgeCitaAnne[nrow(AgeCitaAnne) + 1,] = list(2009,0)
+      
+      AgeCitaAnne<-AgeCitaAnne %>% 
+        arrange(AnneeSoutenance)
+      
+    ggplot(data=AgeCitaAnne, aes(x=AnneeSoutenance, y=AgeMoy, fill=AnneeSoutenance)) +
+        geom_bar(colour="black", stat="identity") +
+        guides(fill=FALSE)      
+      
+      
+    
+    ggplot(AgeCitaAnne, aes(AnneeSoutenance, AgeMoy)) +
+      geom_linerange(
+        aes(x = AnneeSoutenance, ymin = 0, ymax = AgeMoy), 
+        color = "lightgray", size = 5
+      )+
+      geom_point(aes(color = AnneeSoutenance), size = 2)+
+      theme_pubclean() + scale_y_continuous(limits = c(0, 60))+
+      geom_text(aes(label = round(AgeMoy,1)), vjust = -0.9,size=3) + labs( x = "Année de Soutenance", y = "Age Moyen des Citations")
+    
+kable(AgeCitaAnne)
+
+```
+
+
+```{r}
+# 14.  Évolution diachronique des auteurs les plus cités     
+
+    
+# remplacer les valeurs manquantes des nombre d'occurences des auteurs cités par zéro pour réussir les calculs
+DonneesPersCita<-DonneesPersCita %>% replace_na(list(OccAuteur1 = 0, OccAuteur2 = 0,
+                                       OccAuteur3=0,OccAuteur4=0,OccAuteur5=0,                                                   
+                                       AuteurCite1=".",AuteurCite2=".", AuteurCite3=".",
+                                       AuteurCite4=".",AuteurCite5=".")) 
+
+Auteurs<-DonneesPersCita %>% select(AnneSoutenance, OccAuteur1,OccAuteur2,OccAuteur3,OccAuteur4,
+                      OccAuteur5,AuteurCite1,AuteurCite2,AuteurCite3,AuteurCite4,AuteurCite5)
+
+
+  K<-vector("list", 5)
+    M<-c(1:5)
+    
+    for(i in 1:length(K)){names(K)[i]<-paste0("AuteurCite",M[i])}
+    
+    noms1<-names(Auteurs)
+    
+    for(i in 1:length(K)){
+      K[[i]]<-Auteurs %>%
+        group_by(AnneSoutenance, auteur=get(noms1[6+i])) %>%
+        summarise(nbMem=n(), NbCitAut=sum(get(noms1[1+i])))%>%
+        filter(auteur != ".")
+      
+    }
+    
+
+    
+    AuteursAll<- K[1:5] %>% 
+      # Bind the 5 elements of K into a single data frame
+      bind_rows(.id = "id")
+    
+    
+    # Nb de citations par auteurspar années
+    
+    AuteursSummary<-AuteursAll %>%
+      group_by(auteur, AnneSoutenance)%>%
+      summarise(NbCitAut=sum(NbCitAut), nbMem=sum(nbMem))
+    
+    kable(AuteursSummary)
+    
+    
+    # Nb de citations par auteur sur la période
+    
+    AuteursSummary1<-AuteursSummary %>%
+      group_by(auteur)%>%
+      summarise(NbCitAut=sum(NbCitAut), nbMem=sum(nbMem))
+    
+    kable(AuteursSummary1)
+    
+
+
+
+```
+
+```{r}
+   
+# 16. Evolution diachronique du financement
+    
+    #??? travail préliminaire sur les données
+
+    library(readr)
+    
+    # Création d'identifiant numériques par extraction de chiffres à partir d'identifiant caractère  
+    
+    DonneesMethod <- mutate(DonneesMethod, Numero=parse_number(Numgrille))
+    
+    DonneesConcept <- mutate(DonneesConcept, Numero=parse_number(NumgrilleC))
+    
+    DonneesPersCita <- mutate(DonneesPersCita, Numero=parse_number(Numgrille))
+    
+# Creéation d'un data frame pour réliser les jointures des
+# deux autres bases avec l'année de soutenance via la clé numéro 
+# précédemment créée
+ 
+Annee<-data.frame(Numero=DonneesPersCita$Numero ,AnneSoutenance=DonneesPersCita$AnneSoutenance)
+    
+    # Ajout de l'année par jointure
+    
+DonneesMethod <- inner_join(Annee, DonneesMethod, by="Numero") 
+  
+DonneesConcept <- inner_join(Annee, DonneesConcept, by="Numero") 
+
+DonneesPersMeth<-inner_join(DonneesPersCita,DonneesMethod, by="Numero")
+#financement des mémoires
+kable(addmargins(table(Financement=DonneesMethod$Financement, annee=DonneesMethod$AnneSoutenance)))
+    # financement par institution
+     FinIns<-DonneesPersMeth%>%group_by(AnneSoutenance.x,InstitutionSoutenanceMemoire,Financement)%>%
+       summarise(Nb=n())
+
+     kable(FinIns)
+
+```
+
+```{r}
+#. 17. Evolution diachronique de paradigmes ou approches méthodologiques      
+      
+# Theorie
+# Création d'une variable Theorie_ avec les valeurs "Autre" de Theorie
+
+DonneesMethod <- DonneesMethod %>% rename(Theorie=Thorie) 
+
+for(i in 1:nrow(DonneesMethod)){
+  
+  if ( !(DonneesMethod$Theorie[i] %in% c("Autres",NA)) )
+  {
+    DonneesMethod$Theorie_[i] <- DonneesMethod$Theorie[i]
+  } else if (is.na(DonneesMethod$Theorie[i]))
+  {
+    DonneesMethod$Theorie_[i] <- "."
+  } else
+  {
+    DonneesMethod$Theorie_[i] <- DonneesMethod$AutreThorie[i]
+  }
+}
+
+
+# Classement des théories 
+
+Theories<-DonneesMethod%>%group_by(AnneSoutenance, Theorie_)%>%summarise(Nb=n())
+kable(Theories)
+
+
+```
+
+```{r}
+# 18. Evolution diachronique de l'énoncé du problème
+  
+PbRecherche<-DonneesMethod%>%group_by(AnneSoutenance, QRecherPb)%>%
+  summarise(Nb=n())
+
+kable(PbRecherche)
+
+
+```
+
+```{r}
+
+
+# 19. Evolution diachronique de l'énoncé des objectifs généraux et spécifiques
+
+ObjGen1<-DonneesMethod%>%group_by(AnneSoutenance, ObjGen=PresentationObjGen)%>%
+  summarise(Nb=n())
+
+
+ObjGen1$ObjGen<-factor(ObjGen1$ObjGen)
+str(ObjGen1)
+levels(ObjGen1$ObjGen)[levels(ObjGen1$ObjGen)=="Yes"]<-"Oui"
+levels(ObjGen1$ObjGen)[levels(ObjGen1$ObjGen)=="No"]<-"Non"
+
+
+p_ObjGen1 <- ggplot(ObjGen1, aes(factor(AnneSoutenance), Nb, fill = ObjGen)) +
+  geom_bar(stat = "identity", position = "dodge") +
+ coord_flip() +  
+labs( x = "Année de Soutenance", y = "Effectif")
+
+kable(ObjGen1)
+# pour toute la période
+
+ObjGen1All<-ObjGen1%>%group_by(ObjGen)%>%
+  summarise(Nb=sum(Nb))
+
+p_ObjGen1All <- ggplot( ObjGen1All, aes(ObjGen, Nb, fill = ObjGen)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  #coord_flip() +  
+  labs( x = "Année de Soutenance", y = "Effectif")
+
+grid.arrange(p_ObjGen1, p_ObjGen1All, ncol = 2)
+  
+
+
+
+```
+
+```{r}
+# 20. Evolution diachronique de l'énoncé des hypothèses
+kable(addmargins(table(DonneesMethod$AnneSoutenance,DonneesMethod$PresentationdesHypo)))
+
+
+
+```
+
+
+```{r}
+
+# 21. Evolution diachronique des méthodes de recherche
+  # Extraction d'un dataframe sur les instruments
+  Instruments<-DonneesMethod%>%select(AnneSoutenance, InstruCollectePres:AutreIntruments)
+  
+  # remplacer les valeurs manquantes des autres instruments par "." pour réussir les calculs
+  Instruments<-Instruments %>% replace_na(list(AutreIntruments = "."))
+  
+  
+  for(i in 1:nrow(Instruments)){ 
+    if(Instruments$Questionnaires[i]=="Yes" | Instruments$GuidesEntretiens[i]=="Yes" | Instruments$GrillesObservation[i]=="Yes"| Instruments$AutreIntruments[i]=="QUESTIONNAIRE-INTERVIEW"){
+      Instruments$MethRecher[i]="Enquête"} 
+    if(Instruments$GrilleCollDoc[i]=="Yes"){Instruments$MethRecher[i]="Historique"} 
+    if(Instruments$GrilleCollDoc[i]=="Yes" & Instruments$AutreIntruments[i]=="QUESTIONNAIRE-INTERVIEW") {Instruments$MethRecher[i]="Historique+Enquête"}
+        if(Instruments$GrillesExprimentation[i]=="Yes" | Instruments$AutreIntruments[i]=="QUESTIONS ORALES")
+          {Instruments$MethRecher[i]="Expérimentale"}}
+
+MethReAll<-Instruments%>%group_by(AnneSoutenance, Méth_Rech=MethRecher)%>%
+  summarise(Nb=n())
+
+p_MethReAll <- ggplot(MethReAll, aes(factor(AnneSoutenance), Nb, fill = Méth_Rech)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  coord_flip() +  
+  labs( x = "Année de Soutenance", y = "Effectif")+ theme_bw()
+
+MethReAll1<-MethReAll%>%group_by(Méth_Rech)%>%
+  summarise(Nb2=sum(Nb))
+  
+
+
+p_MethReAll1 <- ggplot( MethReAll1, aes(Méth_Rech, Nb2, fill = Méth_Rech)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  #coord_flip() + 
+  geom_text(aes(label = Nb2), vjust = -0.4,size=3) +
+  labs( x = "Méthode de Recheche", y = "Effectif")+theme_bw()+theme(legend.title = element_blank())+
+  theme(legend.position = "none")+theme(axis.text.x=element_blank())
+
+grid.arrange(p_MethReAll, p_MethReAll1, ncol = 2)
+
+  kable(MethReAll)
+  
+
+```
+
+```{r}
+# 22. Evolution diachronique des instruments de collecte de données
+kable(addmargins(table(Instruments$AnneSoutenance,Instruments$InstruCollectePres )))
+
+```
+
+```{r}
+# 23. Evolution diachronique de la validation des instruments
+for (i in 1:nrow(DonneesMethod)){if(!(DonneesMethod$ValidationInstrCol[i]%in%c("Yes","No"))){DonneesMethod$ValidationInstrCol[i]<-"No"}}
+
+valid<-DonneesMethod%>%group_by(AnneSoutenance ,ValidationInstrCol)%>%
+  summarise(Nb=n())
+Valid0<-valid%>%group_by(AnneSoutenance)%>%
+  summarise(Nb=sum(Nb))
+
+kable(Valid0)
+
+valid1<-DonneesMethod%>%group_by(ValidationInstrCol)%>%
+  summarise(Nb=n())
+
+bp<- ggplot(valid1, aes(x="", y=Nb, fill=ValidationInstrCol))+
+  geom_bar(width = 1, stat = "identity")
+
+pie1 <- bp + coord_polar("y", start=0) +
+  theme_gray()+theme(axis.text.x=element_blank()) +
+  geom_text(aes(label = Nb), vjust = -2,size=4)+
+  labs(x = NULL, y = "Validation Ins Collecte", fill = NULL, size=10)
+
+TypesValid<-DonneesMethod%>%group_by(AnneSoutenance,TypesValidationInstr)%>%
+            summarise(Nb=n())
+
+TypesValid<-TypesValid%>%replace_na(list(TypesValidationInstr = "Aucune Validation"))
+
+kable(TypesValid)
+
+TypesValid1<-TypesValid%>%group_by(TypesValidationInstr)%>%
+  summarise(Nb=sum(Nb))
+
+bp1<- ggplot(TypesValid1, aes(x="", y=Nb, fill=TypesValidationInstr))+
+  geom_bar(width = 1, stat = "identity")
+
+pie2 <- bp1 + coord_polar("y", start=0) +
+  theme_gray()+theme(axis.text.x=element_blank()) +
+  geom_text(aes(label = Nb), vjust = -2,size=3)+
+  labs(x = NULL, y = "Types de Validation", fill = NULL, size=10)
+
+grid.arrange(pie1, pie2, ncol = 2)
+
+
+```
+
+```{r}
+# 24. Qualité des données
+
+kable(table(DonneesMethod$QualiDonn))
+
+Fraicheur<-DonneesMethod%>%group_by(AnneSoutenance, QualidonFraicheur)%>%
+  summarise(Nb=n())%>%mutate(Fraicheur=ifelse(QualidonFraicheur=="No",0,Nb))%>%
+  filter(!(Fraicheur==0))
+
+Disponibilite<-DonneesMethod%>%group_by(AnneSoutenance, QualidonDisponibilite)%>%
+  summarise(Nb=n())%>%mutate(Disponibilite=ifelse(QualidonDisponibilite=="No",0,Nb))%>%
+  filter(!(Disponibilite==0))
+
+Coherence<-DonneesMethod%>%group_by(AnneSoutenance, QualidonCohérence)%>%
+  summarise(Nb=n())%>%mutate(Coherence=ifelse(QualidonCohérence=="No",0,Nb))%>%
+  filter(!(Coherence==0))
+
+Exhaustivite<-DonneesMethod%>%group_by(AnneSoutenance, QualidonExhaustivite)%>%
+  summarise(Nb=n())%>%mutate(Exhaustivite=ifelse(QualidonExhaustivite=="No",0,Nb))%>%
+  filter(!(Exhaustivite==0))
+
+
+Tracabilite<-DonneesMethod%>%group_by(AnneSoutenance, QualidonTracabilite)%>%
+  summarise(Nb=n())%>%mutate(Tracabilite=ifelse(QualidonTracabilite=="No",0,Nb))%>%
+  filter(!(Tracabilite==0))
+
+
+Securisation<-DonneesMethod%>%group_by(AnneSoutenance, QualidonSecurisation)%>%
+  summarise(Nb=n())%>%mutate(Securisation=ifelse(QualidonSecurisation=="No",0,Nb))%>%
+  filter(!(Securisation==0))
+
+            kable(Fraicheur)
+            kable(Disponibilite)
+            kable(Coherence)
+            kable(Exhaustivite)
+            kable(Tracabilite)
+            kable(Securisation)
+            
+
+
+```
+
+```{r}
+# 25. Evolution diachronique de l'unité d'analyse      
+       
+            
+    # remplacer les valeurs manquantes des autres instruments par "." pour réussir les calculs
+  DonneesMethod<-DonneesMethod %>% replace_na(list(AutresUnitesObservation = "."))
+ 
+  for(i in 1:nrow(DonneesMethod)){
+                                DonneesMethod$UObs[i]<-c("X")
+                                for(j in c(39:42,44)){
+                                  if(j==44){if((DonneesMethod[i,j])!="."){DonneesMethod$UObs[i]<-paste0(DonneesMethod$UObs[i],"/", DonneesMethod[i,j])}}
+                                  else if(DonneesMethod[i,j]=="Yes"){DonneesMethod$UObs[i]<-paste0(DonneesMethod$UObs[i],"/", gsub("UObs_",'',colnames(DonneesMethod[j]))) }   
+                                                      }
+    
+  }   
+  
+  for (i in 1:nrow(DonneesMethod)) {
+    DonneesMethod$UObs[i]<- gsub("X/","",DonneesMethod$UObs[i])     
+  }
+  
+  UnitesObs<-kable(DonneesMethod %>% group_by(AnneSoutenance,UObs) %>% summarise(Nb=n()))
+  UnitesObs
+
+
+```
+
+```{r}
+# 27. Taille de l'échantillon
+
+library(pastecs)
+kable(stat.desc(DonneesMethod$TailleEchantillon))
+
+
+```
+
+```{r}
+# 28. paradigme
+
+paradigme<-DonneesMethod%>%group_by(AnneSoutenance, ApprochesMetho)%>%
+  summarise(Nb=n())
+
+paradigme[nrow(paradigme) + 1,] = list(2005,"Qualitative", 0)
+paradigme[nrow(paradigme) + 1,] = list(2006,"Mixte", 0)
+paradigme[nrow(paradigme) + 1,] = list(2006,"Quantitative", 0)
+
+paradigme[nrow(paradigme) + 1,] = list(2007,"Qualitative", 0)
+paradigme[nrow(paradigme) + 1,] = list(2007,"Mixte", 0)
+paradigme[nrow(paradigme) + 1,] = list(2007,"Quantitative", 0)
+
+paradigme[nrow(paradigme) + 1,] = list(2008,"Qualitative", 0)
+paradigme[nrow(paradigme) + 1,] = list(2008,"Mixte", 0)
+
+paradigme[nrow(paradigme) + 1,] = list(2009,"Qualitative", 0)
+paradigme[nrow(paradigme) + 1,] = list(2009,"Mixte", 0)
+paradigme[nrow(paradigme) + 1,] = list(2009,"Quantitative", 0)
+
+paradigme[nrow(paradigme) + 1,] = list(2010,"Quantitative", 0)
+
+paradigme[nrow(paradigme) + 1,] = list(2011,"Qualitative", 0)
+paradigme[nrow(paradigme) + 1,] = list(2011,"Quantitative", 0)
+
+paradigme[nrow(paradigme) + 1,] = list(2012,"Mixte", 0)
+paradigme[nrow(paradigme) + 1,] = list(2012,"Quantitative", 0)
+
+paradigme[nrow(paradigme) + 1,] = list(2013,"Qualitative", 0)
+paradigme[nrow(paradigme) + 1,] = list(2013,"Quantitative", 0)
+
+paradigme[nrow(paradigme) + 1,] = list(2016,"Qualitative", 0)
+
+paradigme[nrow(paradigme) + 1,] = list(2017,"Quantitative", 0)
+
+paradigme[nrow(paradigme) + 1,] = list(2019,"Mixte", 0)
+paradigme[nrow(paradigme) + 1,] = list(2019,"Quantitative", 0)
+
+
+P_Paradigme<-ggplot(paradigme, aes(factor(AnneSoutenance), Nb, fill = ApprochesMetho)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  coord_flip() +  
+  labs( x = "Année de Soutenance", y = "Effectif")+
+  theme_gray()
+
+P_Paradigme
+
+kable(paradigme)
+
+
+
+```
+
+```{r}
+# 29 Evolution diachronique des techniques d'analyse
+for(i in 1:nrow(DonneesMethod)){if(DonneesMethod$TechAna1[i]=="ANALYSE DESCRIPIVE"){DonneesMethod$TechAna1[i]="ANALYSE DESCRIPTIVE"}}
+
+TechAna<-DonneesMethod%>%group_by(TechAna1)%>%
+  summarise(Nb=n())
+
+
+#install.packages("plotrix")
+library(plotrix)
+pie3D(TechAna$Nb, labels = TechAna$TechAna1, main = "Techniques d'analyse", explode=0.5, radius=.9, labelcex = 1,  start=0.7)
+
+DelTemp<-DonneesMethod%>%group_by(AnneSoutenance,DlimitationTemp)%>%
+  summarise(Nb=n())
+
+ggplot(data = DelTemp) + 
+  geom_bar(mapping = aes(x = 1, fill = DlimitationTemp), position = "fill") +
+  coord_polar(theta = "y") +
+  facet_wrap( ~ as.factor(AnneSoutenance), nrow = 3) +
+  scale_fill_brewer(type = "qual", palette = 6)+
+  theme(axis.line = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank())+
+  #geom_text(aes(label = Nb), position = position_stack(vjust = 0.5),size=4)+
+  labs(x = NULL, y = "Délimitation Temporelle", fill = NULL, size=10)
+
+kable(DelTemp)
+
+```
+
+```{r}
+# 31. Nombre de pages
+Pages<-DonneesMethod%>%group_by(AnneSoutenance)%>%
+  summarise(NbMem=n(),NbP=sum(NbPages), MoyP=mean(NbPages), MaxP=max(NbPages)
+            ,MinP=min(NbPages))
+
+nbp<-ggplot(Pages, aes(x = AnneSoutenance))  + #geom_line(aes(y=NbP , colour = "NbP")) + 
+  geom_line(aes(y = MoyP, colour = "MoyP"),size=2) + geom_line(aes(y=MaxP , colour = "MaxP"),size=2) +
+  geom_line(aes(y=MinP , colour = "MinP"),size=2)+
+  labs(x = "Année de Soutenance", y = "Nombre de Pages")+
+  #geom_point(size = 1.2)+
+  geom_text(aes(x=2018, label="Provisoire", y=180), colour="#FF0000", angle=90, vjust = 1.5,hjust=3.3, text=element_text(size=6))
+#+
+ # geom_text(aes(label =NbP), vjust = -1.2, size=2.5)
+
+nbp
+
+kable(stat.desc(Pages$NbP))
+kable(stat.desc(Pages$MoyP))
+kable(stat.desc(Pages$MaxP))
+kable(stat.desc(Pages$MinP))
+kable(Pages)
+```
+
+```{r}
+# 32. Evolution diachronique des implications de la recherche
+
+#install.packages("plotly")
+library(plotly)
+
+Implication<-DonneesMethod%>%group_by(AnneSoutenance, ImplicationPratique)%>%
+  summarise(Nb=n())
+
+Implication1<-Implication%>%group_by(ImplicationPratique)%>%
+  summarise(Nb=sum(Nb))
+
+#p <- plot_ly(
+ # x = ~Implication1$ImplicationPratique,
+#  y = ~Implication1$Nb, type = "bar", text = Implication1$Nb, textposition = 'auto'
+  
+#)
+
+#plot_ly(DonneesMethod,x =~as.factor(AnneSoutenance),color =~ImplicationPratique,colors =c("#7FC97F","#F0027F"))
+
+# 33 . Evolution diachronique de la confrontation des résultats aux théories
+
+table(DonneesMethod$ConfResTheo)
+
+  ConfRT<-DonneesMethod%>%group_by(ConfResTheo)%>%
+  summarise(Nb=n())
+
+
+ggplot(ConfRT, aes(ConfResTheo, Nb)) +
+  geom_linerange(
+    aes(x = ConfResTheo, ymin = 0, ymax = Nb), 
+    color = "lightgray", size = 4
+  )+
+  geom_point(aes(color = ConfResTheo), size = 3)+
+  ggpubr::color_palette("jco")+
+  theme_pubclean() + scale_y_continuous(limits = c(0, 38))+
+  geom_text(aes(label = Nb), vjust = -0.9) + labs( x = "Confrontation théorie et Resultats", y = "Effectif")
+
+
+```
+
+
+```{r}
+# 34. références
+
+Ref<-DonneesMethod%>%group_by(AnneSoutenance,RefCompletes)%>%
+  summarise(Nb=n())
+kable(Ref)
+
+```
+
+
+```{r}
+# 34. sous régions des auteurs
+
+AO<-c("Bénin","Burkina Faso","Côte d'Ivoire","Gambie","Niger","Sénégal","Togo")
+AC<-c("Cameroun","Gabon","Tchad","République du Congo")
+AE<-c("Kenya","Rwanda","Tanzanie")
+
+
+DonneesPersCita<-DonneesPersCita%>%mutate(SousRegion=ifelse(PaysAuteur %in% AO,"Afr.Ouest",
+                                                            ifelse(PaysAuteur %in% AC,"Afr.Centrale",
+                                                                   ifelse(PaysAuteur %in% AE,"Afr.Est","Afr.Sud"))))
+
+
+Pays<-DonneesPersCita%>%group_by(PaysAuteur,SousRegion)%>%summarise(Nb=n(),Pour=round(Nb*100/55,2))
+kable(Pays)
+SsReg<-Pays%>%group_by(SousRegion)%>%summarise(NbS=sum(Nb),PourSR=sum(Pour))
+kable(SsReg)
+
+
+```
+
